@@ -29,8 +29,11 @@ function authMiddleware(req: Request, res: Response, next: NextFunction) {
     /*if(typeof identityHeader != 'string')
         return res.status(401).end('No identity header')*/
 
-    if(typeof identityHeader != 'string')
-        return req.account = '540155';// For development only
+    if(typeof identityHeader != 'string'){// Temporary - For development only
+        req.account = '540155';
+        return next();
+    }
+
 
     const identityString = Buffer.from(identityHeader, 'base64').toString('utf-8');
     const identity = JSON.parse(identityString);
