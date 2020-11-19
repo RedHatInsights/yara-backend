@@ -1,9 +1,12 @@
 --! Previous: -
---! Hash: sha1:492983a3fbb3bab426e9289e8dbbd554ce8546c5
+--! Hash: sha1:a8ea9d062924e2053c4c60d43a9dc9e00474c108
 
 DROP FUNCTION IF EXISTS rule_system_count(rule);
+DROP FUNCTION IF EXISTS rule_affected_systems(rule);
+DROP FUNCTION IF EXISTS rule_last_match_date(rule);
 DROP FUNCTION IF EXISTS rule_has_match(rule);
 DROP FUNCTION IF EXISTS rule_is_disabled(rule);
+DROP FUNCTION IF EXISTS host_last_scan_date(host);
 DROP FUNCTION IF EXISTS disable_rule(int);
 DROP FUNCTION IF EXISTS enable_rule(int);
 DROP FUNCTION IF EXISTS rule_stats();
@@ -27,11 +30,12 @@ DROP VIEW IF EXISTS stats;
 
 CREATE TABLE rule
 (
-    id       integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    name     text NOT NULL CHECK (char_length(name) < 80),
-    tags     text[],/*check array length, element length, uniqueness*/
-    metadata jsonb,
-    raw_rule text
+    id         integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    name       text NOT NULL CHECK (char_length(name) < 80),
+    tags       text[],/*check array length, element length, uniqueness*/
+    metadata   jsonb,
+    created_at timestamp DEFAULT now(),
+    raw_rule   text
 );
 CREATE TABLE rule_disable
 (
@@ -114,6 +118,10 @@ CREATE INDEX ON rule_scan (scan_id);
 CREATE INDEX ON rule_scan (rule_id);
 CREATE INDEX ON string_match (rule_scan_id);
 CREATE INDEX ON rule_disable (rule_id);
+CREATE INDEX ON scan (created_at);
+CREATE INDEX ON rule (created_at);
+CREATE INDEX ON rule (name text_pattern_ops);
+
 
 
 CREATE TYPE rule_stats AS
@@ -202,6 +210,17 @@ WHERE rule_scan.rule_id = r.id;
 
 $$ LANGUAGE sql STABLE;
 
+CREATE FUNCTION rule_last_match_date(r rule) RETURNS timestamp AS
+$$
+SELECT created_at
+FROM scan
+         JOIN rule_scan ON scan.id = scan_id
+         JOIN string_match ON rule_scan.id = string_match.rule_scan_id
+WHERE rule_scan.rule_id = r.id
+ORDER BY created_at DESC
+LIMIT 1;
+$$ LANGUAGE sql STABLE;
+
 
 CREATE FUNCTION rule_has_match(r rule) RETURNS boolean AS
 $$
@@ -213,12 +232,32 @@ SELECT exists(SELECT 1
 
 $$ LANGUAGE sql STABLE;
 
+CREATE FUNCTION rule_affected_systems(r rule) RETURNS setof host AS
+$$
+
+SELECT *
+FROM host
+WHERE exists(SELECT 1
+             FROM scan
+                      JOIN rule_scan ON scan.id = rule_scan.scan_id
+                      JOIN string_match sm ON rule_scan.id = sm.rule_scan_id);
+$$ LANGUAGE sql STABLE;
+
 
 CREATE FUNCTION rule_is_disabled(r rule) RETURNS boolean AS
 $$
 
 SELECT exists(SELECT 1 FROM rule_disable WHERE rule_id = r.id);
 
+$$ LANGUAGE sql STABLE;
+
+CREATE FUNCTION host_last_scan_date(h host) RETURNS timestamp AS
+$$
+SELECT created_at
+FROM scan
+WHERE scan.host_id = h.id
+ORDER BY created_at DESC
+LIMIT 1;
 $$ LANGUAGE sql STABLE;
 
 CREATE FUNCTION disable_rule(id int) RETURNS void AS
@@ -247,8 +286,10 @@ COMMENT ON TABLE host IS E'@omit create,update,delete';
 COMMENT ON TABLE rule IS E'@omit create,update,delete,all';
 COMMENT ON FUNCTION search_rules(text) IS E'@sortable\n@filterable\n@name rules';
 COMMENT ON FUNCTION rule_system_count(rule) IS E'@sortable';
+COMMENT ON FUNCTION rule_last_match_date(rule) IS E'@sortable';
 COMMENT ON FUNCTION rule_has_match(rule) IS E'@sortable\n@filterable';
 COMMENT ON FUNCTION rule_is_disabled(rule) IS E'@sortable\n@filterable';
+COMMENT ON FUNCTION host_last_scan_date(host) IS E'@sortable';
 
 
 /*INSERT INTO rule (name, tags, metadata)
