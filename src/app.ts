@@ -10,6 +10,7 @@ import helmet = require('helmet');
 declare module 'express' {
     export interface Request {
         account?: string
+        host_uuid?: string
     }
 }
 
@@ -31,6 +32,7 @@ function authMiddleware(req: Request, res: Response, next: NextFunction) {
 
     if(typeof identityHeader != 'string'){// Temporary - For development only
         req.account = '540155';
+        req.host_uuid = '00000000-0000-0000-0000-000000000000';
         return next();
     }
 
@@ -38,6 +40,7 @@ function authMiddleware(req: Request, res: Response, next: NextFunction) {
     const identityString = Buffer.from(identityHeader, 'base64').toString('utf-8');
     const identity = JSON.parse(identityString);
     req.account = identity.identity.account_number;
+    req.host_uuid = identity.identity?.system?.cn;
     next();
 }
 
@@ -65,7 +68,8 @@ const options: PostGraphileOptions = {
     pgSettings(req) {
         return{
             'role':'yara_user',
-            'insights.account': (<Request>req).account
+            'insights.account': (<Request>req).account,
+            'insights.host_uuid': (<Request>req).host_uuid
         }
     },
     ownerConnectionString: process.env.OWNER_URL

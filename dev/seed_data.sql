@@ -24160,14 +24160,14 @@ SELECT '540155',
        'system' || seq || '.com'
 FROM GENERATE_SERIES(1, :SEED_HOST_COUNT) seq;
 
-INSERT INTO scan (created_at, host_id)
+INSERT INTO host_scan (created_at, host_id)
 SELECT ((now()::date - :SEED_DAYS) + (random() * :SEED_DAYS)::int) + (random() * INTERVAL '1 day'),
        (SELECT array_agg(id) FROM host)[random() * (SELECT count(*) - 1 FROM host) + 1]
 FROM GENERATE_SERIES(1, :SEED_HOST_COUNT * :SEED_DAYS) seq
 ON CONFLICT DO NOTHING;
 
-INSERT INTO rule_scan (scan_id, rule_id)
-SELECT (SELECT array_agg(id) FROM scan)[random() * (SELECT count(*) - 1 FROM scan) + 1],
+INSERT INTO rule_scan (host_scan_id, rule_id)
+SELECT (SELECT array_agg(id) FROM host_scan)[random() * (SELECT count(*) - 1 FROM host_scan) + 1],
        (SELECT array_agg(id) FROM rule)[random() * (SELECT count(*) - 1 FROM rule) + 1]
 FROM GENERATE_SERIES(1, :SEED_HOST_COUNT * :SEED_DAYS * :SEED_SCAN_PER_HOST) seq
 ON CONFLICT DO NOTHING;

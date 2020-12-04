@@ -1,5 +1,5 @@
 --! Previous: -
---! Hash: sha1:a8ea9d062924e2053c4c60d43a9dc9e00474c108
+--! Hash: sha1:c5675e1f4e0b9b8d9ef534bdd0a4f2f8f4ccb419
 
 DROP FUNCTION IF EXISTS rule_system_count(rule);
 DROP FUNCTION IF EXISTS rule_affected_systems(rule);
@@ -9,6 +9,7 @@ DROP FUNCTION IF EXISTS rule_is_disabled(rule);
 DROP FUNCTION IF EXISTS host_last_scan_date(host);
 DROP FUNCTION IF EXISTS disable_rule(int);
 DROP FUNCTION IF EXISTS enable_rule(int);
+DROP FUNCTION IF EXISTS record_host_scan(scanned_host);
 DROP FUNCTION IF EXISTS rule_stats();
 DROP FUNCTION IF EXISTS scan_stats();
 DROP FUNCTION IF EXISTS host_stats();
@@ -19,10 +20,13 @@ DROP TYPE IF EXISTS rule_stats;
 DROP TYPE IF EXISTS scan_stats;
 DROP TYPE IF EXISTS host_stats;
 DROP TYPE IF EXISTS day_stats;
+DROP TYPE IF EXISTS scanned_host;
+DROP TYPE IF EXISTS scanned_rule;
+DROP TYPE IF EXISTS matched_string;
 DROP TABLE IF EXISTS rule_scan;
 DROP TABLE IF EXISTS rule_disable;
 DROP TABLE IF EXISTS scan_rule;
-DROP TABLE IF EXISTS scan;
+DROP TABLE IF EXISTS host_scan;
 DROP TABLE IF EXISTS rule;
 DROP TABLE IF EXISTS host;
 DROP VIEW IF EXISTS current_account;
@@ -51,7 +55,7 @@ CREATE TABLE host
     tags         jsonb,
     inventory_id uuid
 );
-CREATE TABLE scan
+CREATE TABLE host_scan
 (
     id         integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     created_at timestamp DEFAULT now(),
@@ -60,9 +64,9 @@ CREATE TABLE scan
 
 CREATE TABLE rule_scan
 (
-    id      integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    scan_id integer NOT NULL REFERENCES scan (id),
-    rule_id integer NOT NULL REFERENCES rule (id)
+    id           integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    host_scan_id integer NOT NULL REFERENCES host_scan (id),
+    rule_id      integer NOT NULL REFERENCES rule (id)
 );
 
 CREATE TABLE string_match
@@ -77,10 +81,13 @@ CREATE TABLE string_match
 
 
 GRANT SELECT ON TABLE host TO yara_user;
-GRANT SELECT ON TABLE scan TO yara_user;
+GRANT SELECT ON TABLE host_scan TO yara_user;
+GRANT INSERT ON TABLE host_scan TO yara_user;
 GRANT SELECT ON TABLE rule TO yara_user;
 GRANT SELECT ON TABLE rule_scan TO yara_user;
+GRANT INSERT ON TABLE rule_scan TO yara_user;
 GRANT SELECT ON TABLE string_match TO yara_user;
+GRANT INSERT ON TABLE string_match TO yara_user;
 GRANT SELECT ON TABLE rule_disable TO yara_user;
 GRANT INSERT ON TABLE rule_disable TO yara_user;
 GRANT DELETE ON TABLE rule_disable TO yara_user;
@@ -89,7 +96,7 @@ ALTER TABLE rule_disable
     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE host
     ENABLE ROW LEVEL SECURITY;
-ALTER TABLE scan
+ALTER TABLE host_scan
     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE rule_scan
     ENABLE ROW LEVEL SECURITY;
@@ -100,25 +107,35 @@ CREATE POLICY select_rule_disable ON rule_disable FOR SELECT USING (account = cu
 CREATE POLICY delete_rule_disable ON rule_disable FOR DELETE USING (account = current_setting('insights.account'));
 CREATE POLICY insert_rule_disable ON rule_disable FOR INSERT WITH CHECK (account = current_setting('insights.account'));
 CREATE POLICY select_host ON host FOR SELECT USING (account = current_setting('insights.account'));
-CREATE POLICY select_scan ON scan FOR SELECT USING (exists(SELECT 1
-                                                           FROM host
-                                                           WHERE id = host_id));
+CREATE POLICY select_scan ON host_scan FOR SELECT USING (exists(SELECT 1
+                                                                FROM host
+                                                                WHERE id = host_id));
+CREATE POLICY insert_scan ON host_scan FOR INSERT WITH CHECK (exists(SELECT 1
+                                                                     FROM host
+                                                                     WHERE id = host_id));
 CREATE POLICY select_rule_scan ON rule_scan FOR SELECT USING (exists(SELECT 1
-                                                                     FROM scan
-                                                                     WHERE scan_id = id));
+                                                                     FROM host_scan
+                                                                     WHERE host_scan_id = id));
+CREATE POLICY insert_rule_scan ON rule_scan FOR INSERT WITH CHECK (exists(SELECT 1
+                                                                          FROM host_scan
+                                                                          WHERE host_scan_id = id));
 
 
 CREATE POLICY select_string_match ON string_match FOR SELECT USING (exists(SELECT 1
                                                                            FROM rule_scan
                                                                            WHERE rule_scan_id = id));
 
+CREATE POLICY insert_string_match ON string_match FOR INSERT WITH CHECK (exists(SELECT 1
+                                                                                FROM rule_scan
+                                                                                WHERE rule_scan_id = id));
 
-CREATE INDEX scan_host_id_index ON scan (host_id);
-CREATE INDEX ON rule_scan (scan_id);
+
+CREATE INDEX ON host_scan (host_id);
+CREATE INDEX ON rule_scan (host_scan_id);
 CREATE INDEX ON rule_scan (rule_id);
 CREATE INDEX ON string_match (rule_scan_id);
 CREATE INDEX ON rule_disable (rule_id);
-CREATE INDEX ON scan (created_at);
+CREATE INDEX ON host_scan (created_at);
 CREATE INDEX ON rule (created_at);
 CREATE INDEX ON rule (name text_pattern_ops);
 
@@ -184,8 +201,8 @@ CREATE FUNCTION time_series_stats() RETURNS setof day_stats AS
 $$
 SELECT dates.day, count(rule_id), count(DISTINCT host_id)
 FROM (SELECT generate_series(now() - INTERVAL '7 days', now(), '1 day')::date AS day) dates
-         LEFT JOIN scan ON date_trunc('day', created_at) = dates.day
-         LEFT JOIN rule_scan ON scan.id = rule_scan.scan_id
+         LEFT JOIN host_scan ON date_trunc('day', created_at) = dates.day
+         LEFT JOIN rule_scan ON host_scan.id = rule_scan.host_scan_id
 GROUP BY dates.day;
 
 $$ LANGUAGE sql STABLE;
@@ -204,8 +221,8 @@ CREATE FUNCTION rule_system_count(r rule) RETURNS bigint AS
 $$
 
 SELECT count(DISTINCT host_id)
-FROM scan
-         JOIN rule_scan ON scan.id = scan_id
+FROM host_scan
+         JOIN rule_scan ON host_scan.id = host_scan_id
 WHERE rule_scan.rule_id = r.id;
 
 $$ LANGUAGE sql STABLE;
@@ -213,8 +230,8 @@ $$ LANGUAGE sql STABLE;
 CREATE FUNCTION rule_last_match_date(r rule) RETURNS timestamp AS
 $$
 SELECT created_at
-FROM scan
-         JOIN rule_scan ON scan.id = scan_id
+FROM host_scan
+         JOIN rule_scan ON host_scan.id = host_scan_id
          JOIN string_match ON rule_scan.id = string_match.rule_scan_id
 WHERE rule_scan.rule_id = r.id
 ORDER BY created_at DESC
@@ -238,8 +255,8 @@ $$
 SELECT *
 FROM host
 WHERE exists(SELECT 1
-             FROM scan
-                      JOIN rule_scan ON scan.id = rule_scan.scan_id
+             FROM host_scan
+                      JOIN rule_scan ON host_scan.id = rule_scan.host_scan_id
                       JOIN string_match sm ON rule_scan.id = sm.rule_scan_id);
 $$ LANGUAGE sql STABLE;
 
@@ -254,8 +271,8 @@ $$ LANGUAGE sql STABLE;
 CREATE FUNCTION host_last_scan_date(h host) RETURNS timestamp AS
 $$
 SELECT created_at
-FROM scan
-WHERE scan.host_id = h.id
+FROM host_scan
+WHERE host_scan.host_id = h.id
 ORDER BY created_at DESC
 LIMIT 1;
 $$ LANGUAGE sql STABLE;
@@ -277,11 +294,71 @@ WHERE rule_id = id;
 $$ LANGUAGE sql VOLATILE;
 
 
+CREATE TYPE matched_string AS
+(
+    source            text,
+    string_offset     bigint,
+    string_identifier text,
+    string_data       text
+
+);
+CREATE TYPE scanned_rule AS
+(
+    rule_id         int,
+    strings_matched matched_string[]
+);
+
+CREATE TYPE scanned_host AS
+(
+    rules_scanned scanned_rule[]
+);
+CREATE FUNCTION record_host_scan(scannedHost scanned_host) RETURNS boolean AS
+$$
+
+DECLARE
+    host_scan_id  int;
+    rule_scan_id  int;
+    scannedRule   scanned_rule;
+    matchedString matched_string;
+
+BEGIN
+    INSERT INTO host_scan(created_at, host_id)
+    VALUES (now(), (SELECT id from host where inventory_id = current_setting('insights.host_uuid')::uuid))
+    RETURNING id INTO host_scan_id;
+
+    IF scannedHost.rules_scanned IS NOT NULL THEN
+        FOREACH scannedRule IN ARRAY scannedHost.rules_scanned
+            LOOP
+                INSERT INTO rule_scan (host_scan_id, rule_id)
+                SELECT host_scan_id, scannedRule.rule_id
+                RETURNING id INTO rule_scan_id;
+
+                IF scannedRule.strings_matched IS NOT NULL THEN
+                    FOREACH matchedString IN ARRAY scannedRule.strings_matched
+                        LOOP
+                            INSERT INTO string_match(rule_scan_id, source, string_offset, string_identifier, string_data)
+                            SELECT rule_scan_id,
+                                   matchedString.source,
+                                   matchedString.string_offset,
+                                   matchedString.string_identifier,
+                                   matchedString.string_data;
+                        END LOOP;
+                END IF;
+            END LOOP;
+    END IF;
+    RETURN TRUE;
+
+
+END;
+
+$$ LANGUAGE plpgsql VOLATILE;
+
+
 
 COMMENT ON TABLE rule_disable IS E'@omit';
 COMMENT ON TABLE rule_scan IS E'@omit create,update,delete';
 COMMENT ON TABLE string_match IS E'@omit create,update,delete';
-COMMENT ON TABLE scan IS E'@omit create,update,delete';
+COMMENT ON TABLE host_scan IS E'@omit create,update,delete';
 COMMENT ON TABLE host IS E'@omit create,update,delete';
 COMMENT ON TABLE rule IS E'@omit create,update,delete,all';
 COMMENT ON FUNCTION search_rules(text) IS E'@sortable\n@filterable\n@name rules';
@@ -290,6 +367,7 @@ COMMENT ON FUNCTION rule_last_match_date(rule) IS E'@sortable';
 COMMENT ON FUNCTION rule_has_match(rule) IS E'@sortable\n@filterable';
 COMMENT ON FUNCTION rule_is_disabled(rule) IS E'@sortable\n@filterable';
 COMMENT ON FUNCTION host_last_scan_date(host) IS E'@sortable';
+COMMENT ON FUNCTION record_host_scan(scanned_host) IS E'@resultFieldName success';
 
 
 /*INSERT INTO rule (name, tags, metadata)
@@ -306,17 +384,17 @@ VALUES ('540155', 'a.com');
 
 
 
-INSERT INTO scan (host_id)
+INSERT INTO host_scan (host_id)
 VALUES (1);
-INSERT INTO rule_scan (rule_id, scan_id)
+INSERT INTO rule_scan (rule_id, host_scan_id)
 VALUES (2, 1),
        (1, 1);
 
 
-INSERT INTO scan (host_id, created_at)
+INSERT INTO host_scan (host_id, created_at)
 VALUES (1, now() - INTERVAL '1 day'),
        (1, now() - INTERVAL '3 day');
-INSERT INTO rule_scan (rule_id, scan_id)
+INSERT INTO rule_scan (rule_id, host_scan_id)
 VALUES (1, 2),
        (2, 2),
        (2, 3);
@@ -331,8 +409,5 @@ INSERT INTO rule_disable(account, rule_id)
 VALUES ('729650', 1),
        ('540155', 2);*/
 
-
-/*
-Todo: upload rule function
-      upload results function
-*/
+INSERT INTO host (account, hostname, inventory_id)
+VALUES ('540155', 'example.system.com', '00000000-0000-0000-0000-000000000000');
