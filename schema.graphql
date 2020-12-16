@@ -136,6 +136,23 @@ type Host implements Node {
     """
     condition: HostScanCondition
   ): HostScansConnection!
+
+  """Reads and enables pagination through a set of `HostScan`."""
+  hostScansList(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Skip the first `n` values."""
+    offset: Int
+
+    """The method to use when ordering `HostScan`."""
+    orderBy: [HostScansOrderBy!]
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: HostScanCondition
+  ): [HostScan!]!
   lastScanDate: Datetime
 }
 
@@ -187,6 +204,23 @@ type HostScan implements Node {
     """
     condition: RuleScanCondition
   ): RuleScansConnection!
+
+  """Reads and enables pagination through a set of `RuleScan`."""
+  ruleScansList(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Skip the first `n` values."""
+    offset: Int
+
+    """The method to use when ordering `RuleScan`."""
+    orderBy: [RuleScansOrderBy!]
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: RuleScanCondition
+  ): [RuleScan!]!
 }
 
 """
@@ -392,6 +426,23 @@ type Query implements Node {
     condition: HostCondition
   ): HostsConnection
 
+  """Reads a set of `Host`."""
+  hostsList(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Skip the first `n` values."""
+    offset: Int
+
+    """The method to use when ordering `Host`."""
+    orderBy: [HostsOrderBy!]
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: HostCondition
+  ): [Host!]
+
   """Reads and enables pagination through a set of `HostScan`."""
   hostScans(
     """Only read the first `n` values of the set."""
@@ -420,6 +471,23 @@ type Query implements Node {
     """
     condition: HostScanCondition
   ): HostScansConnection
+
+  """Reads a set of `HostScan`."""
+  hostScansList(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Skip the first `n` values."""
+    offset: Int
+
+    """The method to use when ordering `HostScan`."""
+    orderBy: [HostScansOrderBy!]
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: HostScanCondition
+  ): [HostScan!]
 
   """Reads and enables pagination through a set of `RuleScan`."""
   ruleScans(
@@ -450,6 +518,23 @@ type Query implements Node {
     condition: RuleScanCondition
   ): RuleScansConnection
 
+  """Reads a set of `RuleScan`."""
+  ruleScansList(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Skip the first `n` values."""
+    offset: Int
+
+    """The method to use when ordering `RuleScan`."""
+    orderBy: [RuleScansOrderBy!]
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: RuleScanCondition
+  ): [RuleScan!]
+
   """Reads and enables pagination through a set of `StringMatch`."""
   stringMatches(
     """Only read the first `n` values of the set."""
@@ -478,6 +563,23 @@ type Query implements Node {
     """
     condition: StringMatchCondition
   ): StringMatchesConnection
+
+  """Reads a set of `StringMatch`."""
+  stringMatchesList(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Skip the first `n` values."""
+    offset: Int
+
+    """The method to use when ordering `StringMatch`."""
+    orderBy: [StringMatchesOrderBy!]
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: StringMatchCondition
+  ): [StringMatch!]
   host(id: Int!): Host
   hostScan(id: Int!): HostScan
   rule(id: Int!): Rule
@@ -518,6 +620,25 @@ type Query implements Node {
     condition: RuleCondition
   ): RulesConnection
 
+  """Reads and enables pagination through a set of `Rule`."""
+  rulesList(
+    ruleName: String
+
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Skip the first `n` values."""
+    offset: Int
+
+    """The method to use when ordering `Rule`."""
+    orderBy: [RulesOrderBy!]
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: RuleCondition
+  ): [Rule!]
+
   """Reads and enables pagination through a set of `DayStat`."""
   timeSeriesStats(
     """Only read the first `n` values of the set."""
@@ -538,6 +659,15 @@ type Query implements Node {
     """Read all values in the set after (below) this cursor."""
     after: Cursor
   ): DayStatsConnection
+
+  """Reads and enables pagination through a set of `DayStat`."""
+  timeSeriesStatsList(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Skip the first `n` values."""
+    offset: Int
+  ): [DayStat!]
 
   """Reads a single `Host` using its globally unique `ID`."""
   hostByNodeId(
@@ -638,6 +768,23 @@ type Rule implements Node {
     condition: RuleScanCondition
   ): RuleScansConnection!
 
+  """Reads and enables pagination through a set of `RuleScan`."""
+  ruleScansList(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Skip the first `n` values."""
+    offset: Int
+
+    """The method to use when ordering `RuleScan`."""
+    orderBy: [RuleScansOrderBy!]
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: RuleScanCondition
+  ): [RuleScan!]!
+
   """Reads and enables pagination through a set of `Host`."""
   affectedSystems(
     """Only read the first `n` values of the set."""
@@ -658,6 +805,15 @@ type Rule implements Node {
     """Read all values in the set after (below) this cursor."""
     after: Cursor
   ): HostsConnection!
+
+  """Reads and enables pagination through a set of `Host`."""
+  affectedSystemsList(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Skip the first `n` values."""
+    offset: Int
+  ): [Host!]
   hasMatch: Boolean
   isDisabled: Boolean
   lastMatchDate: Datetime
@@ -727,6 +883,23 @@ type RuleScan implements Node {
     """
     condition: StringMatchCondition
   ): StringMatchesConnection!
+
+  """Reads and enables pagination through a set of `StringMatch`."""
+  stringMatchesList(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Skip the first `n` values."""
+    offset: Int
+
+    """The method to use when ordering `StringMatch`."""
+    orderBy: [StringMatchesOrderBy!]
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: StringMatchCondition
+  ): [StringMatch!]!
 }
 
 """
