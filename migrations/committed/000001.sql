@@ -1,8 +1,8 @@
 --! Previous: -
---! Hash: sha1:c5675e1f4e0b9b8d9ef534bdd0a4f2f8f4ccb419
+--! Hash: sha1:0ff7e951dadf943bac3a623ce0bd083fd5928df3
 
-DROP FUNCTION IF EXISTS rule_system_count(rule);
-DROP FUNCTION IF EXISTS rule_affected_systems(rule);
+DROP FUNCTION IF EXISTS rule_host_count(rule);
+DROP FUNCTION IF EXISTS rule_affected_hosts(rule, text);
 DROP FUNCTION IF EXISTS rule_last_match_date(rule);
 DROP FUNCTION IF EXISTS rule_has_match(rule);
 DROP FUNCTION IF EXISTS rule_is_disabled(rule);
@@ -129,7 +129,7 @@ CREATE POLICY insert_string_match ON string_match FOR INSERT WITH CHECK (exists(
                                                                                 FROM rule_scan
                                                                                 WHERE rule_scan_id = id));
 
-
+CREATE INDEX ON host (hostname);
 CREATE INDEX ON host_scan (host_id);
 CREATE INDEX ON rule_scan (host_scan_id);
 CREATE INDEX ON rule_scan (rule_id);
@@ -217,7 +217,7 @@ WHERE rule_name IS NULL
 $$ LANGUAGE sql STABLE;
 
 
-CREATE FUNCTION rule_system_count(r rule) RETURNS bigint AS
+CREATE FUNCTION rule_host_count(r rule) RETURNS bigint AS
 $$
 
 SELECT count(DISTINCT host_id)
@@ -249,7 +249,7 @@ SELECT exists(SELECT 1
 
 $$ LANGUAGE sql STABLE;
 
-CREATE FUNCTION rule_affected_systems(r rule) RETURNS setof host AS
+CREATE FUNCTION rule_affected_hosts(r rule, host_name text) RETURNS setof host AS
 $$
 
 SELECT *
@@ -257,7 +257,9 @@ FROM host
 WHERE exists(SELECT 1
              FROM host_scan
                       JOIN rule_scan ON host_scan.id = rule_scan.host_scan_id
-                      JOIN string_match sm ON rule_scan.id = sm.rule_scan_id);
+                      JOIN string_match sm ON rule_scan.id = sm.rule_scan_id
+             WHERE rule_scan.rule_id = r.id)
+  AND (host_name IS NULL OR hostname ILIKE ('%' || host_name || '%'));
 $$ LANGUAGE sql STABLE;
 
 
@@ -323,7 +325,7 @@ DECLARE
 
 BEGIN
     INSERT INTO host_scan(created_at, host_id)
-    VALUES (now(), (SELECT id from host where inventory_id = current_setting('insights.host_uuid')::uuid))
+    VALUES (now(), (SELECT id FROM host WHERE inventory_id = current_setting('insights.host_uuid')::uuid))
     RETURNING id INTO host_scan_id;
 
     IF scannedHost.rules_scanned IS NOT NULL THEN
@@ -362,7 +364,8 @@ COMMENT ON TABLE host_scan IS E'@omit create,update,delete';
 COMMENT ON TABLE host IS E'@omit create,update,delete';
 COMMENT ON TABLE rule IS E'@omit create,update,delete,all';
 COMMENT ON FUNCTION search_rules(text) IS E'@sortable\n@filterable\n@name rules';
-COMMENT ON FUNCTION rule_system_count(rule) IS E'@sortable';
+COMMENT ON FUNCTION rule_host_count(rule) IS E'@sortable';
+COMMENT ON FUNCTION rule_affected_hosts(rule, text) IS E'@sortable\n@filterable';
 COMMENT ON FUNCTION rule_last_match_date(rule) IS E'@sortable';
 COMMENT ON FUNCTION rule_has_match(rule) IS E'@sortable\n@filterable';
 COMMENT ON FUNCTION rule_is_disabled(rule) IS E'@sortable\n@filterable';

@@ -162,6 +162,9 @@ A condition to be used against `Host` object types. All fields are tested for eq
 input HostCondition {
   """Checks for equality with the object’s `id` field."""
   id: Int
+
+  """Checks for equality with the object’s `hostname` field."""
+  hostname: String
 }
 
 type HostScan implements Node {
@@ -308,6 +311,8 @@ enum HostsOrderBy {
   NATURAL
   ID_ASC
   ID_DESC
+  HOSTNAME_ASC
+  HOSTNAME_DESC
   LAST_SCAN_DATE_ASC
   LAST_SCAN_DATE_DESC
   PRIMARY_KEY_ASC
@@ -786,7 +791,9 @@ type Rule implements Node {
   ): [RuleScan!]!
 
   """Reads and enables pagination through a set of `Host`."""
-  affectedSystems(
+  affectedHosts(
+    hostName: String
+
     """Only read the first `n` values of the set."""
     first: Int
 
@@ -804,20 +811,38 @@ type Rule implements Node {
 
     """Read all values in the set after (below) this cursor."""
     after: Cursor
+
+    """The method to use when ordering `Host`."""
+    orderBy: [HostsOrderBy!]
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: HostCondition
   ): HostsConnection!
 
   """Reads and enables pagination through a set of `Host`."""
-  affectedSystemsList(
+  affectedHostsList(
+    hostName: String
+
     """Only read the first `n` values of the set."""
     first: Int
 
     """Skip the first `n` values."""
     offset: Int
+
+    """The method to use when ordering `Host`."""
+    orderBy: [HostsOrderBy!]
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: HostCondition
   ): [Host!]
   hasMatch: Boolean
+  hostCount: BigInt
   isDisabled: Boolean
   lastMatchDate: Datetime
-  systemCount: BigInt
 }
 
 """
@@ -993,12 +1018,12 @@ enum RulesOrderBy {
   CREATED_AT_DESC
   HAS_MATCH_ASC
   HAS_MATCH_DESC
+  HOST_COUNT_ASC
+  HOST_COUNT_DESC
   IS_DISABLED_ASC
   IS_DISABLED_DESC
   LAST_MATCH_DATE_ASC
   LAST_MATCH_DATE_DESC
-  SYSTEM_COUNT_ASC
-  SYSTEM_COUNT_DESC
   PRIMARY_KEY_ASC
   PRIMARY_KEY_DESC
 }
