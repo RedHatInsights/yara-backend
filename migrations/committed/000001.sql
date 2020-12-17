@@ -1,5 +1,5 @@
 --! Previous: -
---! Hash: sha1:0ff7e951dadf943bac3a623ce0bd083fd5928df3
+--! Hash: sha1:13f56b1dca12d47c0773c78c8c7ee8a5e95c1ea1
 
 DROP FUNCTION IF EXISTS rule_host_count(rule);
 DROP FUNCTION IF EXISTS rule_affected_hosts(rule, text);
@@ -258,7 +258,8 @@ WHERE exists(SELECT 1
              FROM host_scan
                       JOIN rule_scan ON host_scan.id = rule_scan.host_scan_id
                       JOIN string_match sm ON rule_scan.id = sm.rule_scan_id
-             WHERE rule_scan.rule_id = r.id)
+             WHERE rule_scan.rule_id = r.id
+               AND host_scan.host_id = host.id)
   AND (host_name IS NULL OR hostname ILIKE ('%' || host_name || '%'));
 $$ LANGUAGE sql STABLE;
 
