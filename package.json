@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "sleep 5 && graphile-migrate migrate && graphile-migrate run dev/seed_data.sql && node src/app.js",
+    "start": "node src/app.js",
+    "migrate": "graphile-worker --schema-only && graphile-migrate migrate",
+    "seed": "graphile-migrate run dev/seed_data.sql",
+    "demo": "sleep 5 && npm run migrate && npm run seed && npm start",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
@@ -15,6 +18,7 @@
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "graphile-migrate": "^1.0.2",
+    "graphile-worker": "^0.8.1",
     "helmet": "^4.1.1",
     "morgan": "^1.10.0",
     "pg": "^8.4.2",

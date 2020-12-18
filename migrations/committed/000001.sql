@@ -1,5 +1,5 @@
 --! Previous: -
---! Hash: sha1:13f56b1dca12d47c0773c78c8c7ee8a5e95c1ea1
+--! Hash: sha1:e275afda84e1b46a6397110e0c06db199852a621
 
 DROP FUNCTION IF EXISTS rule_host_count(rule);
 DROP FUNCTION IF EXISTS rule_affected_hosts(rule, text);
@@ -346,6 +346,7 @@ BEGIN
                                    matchedString.string_identifier,
                                    matchedString.string_data;
                         END LOOP;
+                    PERFORM graphile_worker.add_job('detected_malware', to_json(scannedRule));
                 END IF;
             END LOOP;
     END IF;
@@ -354,7 +355,7 @@ BEGIN
 
 END;
 
-$$ LANGUAGE plpgsql VOLATILE;
+$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;
 
 
 

@@ -6,6 +6,7 @@ import bodyParser = require('body-parser');
 import {Request, Response, NextFunction} from "express";
 import morgan = require('morgan');
 import helmet = require('helmet');
+import { run } from "graphile-worker";
 
 declare module 'express' {
     export interface Request {
@@ -91,3 +92,10 @@ const server = app.listen(3000, () => {
         console.log(`PostGraphile listening on ${address} 🚀`);
     }
 });
+run({
+    connectionString: process.env.DATABASE_URL,
+    concurrency: 5,
+    noHandleSignals: false,
+    pollInterval: 1000,
+    taskDirectory: `${__dirname}/tasks`,
+}).catch(err => console.error(err))

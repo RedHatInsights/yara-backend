@@ -26,5 +26,5 @@ services:
       OWNER_URL: postgres://postgres:postgres@db:5432/yara
       ROOT_DATABASE_URL: postgres://postgres:postgres@db:5432/postgres
 
-    command: npm start
+    command: npm run demo
 
