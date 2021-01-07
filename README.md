@@ -6,6 +6,7 @@
 npm install
 cp .env.example .env
 docker-compose up -d db
+tsc
 graphile-migrate watch
 ```
 Then in a new console

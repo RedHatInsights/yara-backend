@@ -1,5 +1,5 @@
 --! Previous: -
---! Hash: sha1:e275afda84e1b46a6397110e0c06db199852a621
+--! Hash: sha1:d2ed0b1edb40f397bf2e63a86501744eaba8795f
 
 DROP FUNCTION IF EXISTS rule_host_count(rule);
 DROP FUNCTION IF EXISTS rule_affected_hosts(rule, text);
@@ -35,22 +35,22 @@ DROP VIEW IF EXISTS stats;
 CREATE TABLE rule
 (
     id         integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    name       text NOT NULL CHECK (char_length(name) < 80),
+    name       text UNIQUE NOT NULL CHECK (CHAR_LENGTH(name) < 80),
     tags       text[],/*check array length, element length, uniqueness*/
     metadata   jsonb,
-    created_at timestamp DEFAULT now(),
+    created_at timestamp DEFAULT NOW(),
     raw_rule   text
 );
 CREATE TABLE rule_disable
 (
-    account text CHECK (char_length(account) < 10),
+    account text CHECK (CHAR_LENGTH(account) < 10),
     rule_id integer NOT NULL REFERENCES rule (id),
     PRIMARY KEY (account, rule_id)
 );
 CREATE TABLE host
 (
     id           integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    account      text CHECK (char_length(account) < 10),
+    account      text CHECK (CHAR_LENGTH(account) < 10),
     hostname     text,
     tags         jsonb,
     inventory_id uuid
@@ -58,7 +58,7 @@ CREATE TABLE host
 CREATE TABLE host_scan
 (
     id         integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    created_at timestamp DEFAULT now(),
+    created_at timestamp DEFAULT NOW(),
     host_id    integer NOT NULL REFERENCES host (id)
 );
 
@@ -103,29 +103,29 @@ ALTER TABLE rule_scan
 ALTER TABLE string_match
     ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY select_rule_disable ON rule_disable FOR SELECT USING (account = current_setting('insights.account'));
-CREATE POLICY delete_rule_disable ON rule_disable FOR DELETE USING (account = current_setting('insights.account'));
-CREATE POLICY insert_rule_disable ON rule_disable FOR INSERT WITH CHECK (account = current_setting('insights.account'));
-CREATE POLICY select_host ON host FOR SELECT USING (account = current_setting('insights.account'));
-CREATE POLICY select_scan ON host_scan FOR SELECT USING (exists(SELECT 1
+CREATE POLICY select_rule_disable ON rule_disable FOR SELECT USING (account = CURRENT_SETTING('insights.account'));
+CREATE POLICY delete_rule_disable ON rule_disable FOR DELETE USING (account = CURRENT_SETTING('insights.account'));
+CREATE POLICY insert_rule_disable ON rule_disable FOR INSERT WITH CHECK (account = CURRENT_SETTING('insights.account'));
+CREATE POLICY select_host ON host FOR SELECT USING (account = CURRENT_SETTING('insights.account'));
+CREATE POLICY select_scan ON host_scan FOR SELECT USING (EXISTS(SELECT 1
                                                                 FROM host
                                                                 WHERE id = host_id));
-CREATE POLICY insert_scan ON host_scan FOR INSERT WITH CHECK (exists(SELECT 1
+CREATE POLICY insert_scan ON host_scan FOR INSERT WITH CHECK (EXISTS(SELECT 1
                                                                      FROM host
                                                                      WHERE id = host_id));
-CREATE POLICY select_rule_scan ON rule_scan FOR SELECT USING (exists(SELECT 1
+CREATE POLICY select_rule_scan ON rule_scan FOR SELECT USING (EXISTS(SELECT 1
                                                                      FROM host_scan
                                                                      WHERE host_scan_id = id));
-CREATE POLICY insert_rule_scan ON rule_scan FOR INSERT WITH CHECK (exists(SELECT 1
+CREATE POLICY insert_rule_scan ON rule_scan FOR INSERT WITH CHECK (EXISTS(SELECT 1
                                                                           FROM host_scan
                                                                           WHERE host_scan_id = id));
 
 
-CREATE POLICY select_string_match ON string_match FOR SELECT USING (exists(SELECT 1
+CREATE POLICY select_string_match ON string_match FOR SELECT USING (EXISTS(SELECT 1
                                                                            FROM rule_scan
                                                                            WHERE rule_scan_id = id));
 
-CREATE POLICY insert_string_match ON string_match FOR INSERT WITH CHECK (exists(SELECT 1
+CREATE POLICY insert_string_match ON string_match FOR INSERT WITH CHECK (EXISTS(SELECT 1
                                                                                 FROM rule_scan
                                                                                 WHERE rule_scan_id = id));
 
@@ -166,9 +166,9 @@ CREATE TYPE day_stats AS
 
 CREATE FUNCTION rule_stats() RETURNS rule_stats AS
 $$
-SELECT count(*) FILTER ( WHERE rd.rule_id IS NULL )                       AS enabled_count,
-       count(*) FILTER ( WHERE rd.rule_id IS NOT NULL )                   AS disabled_count,
-       count(*) FILTER ( WHERE exists(SELECT 1
+SELECT COUNT(*) FILTER ( WHERE rd.rule_id IS NULL )                       AS enabled_count,
+       COUNT(*) FILTER ( WHERE rd.rule_id IS NOT NULL )                   AS disabled_count,
+       COUNT(*) FILTER ( WHERE EXISTS(SELECT 1
                                       FROM string_match
                                                JOIN rule_scan ON string_match.rule_scan_id = rule_scan.id
                                       WHERE rule.id = rule_scan.rule_id)) AS match_count
@@ -179,19 +179,19 @@ $$ LANGUAGE sql STABLE;
 
 CREATE FUNCTION scan_stats() RETURNS scan_stats AS
 $$
-SELECT (SELECT count(*)
+SELECT (SELECT COUNT(*)
         FROM rule_scan
-        WHERE exists(SELECT 1
+        WHERE EXISTS(SELECT 1
                      FROM string_match
                      WHERE string_match.rule_scan_id = rule_scan.id)) AS rule_scan_hit_count,
-       (SELECT count(*) FROM rule_scan)                               AS rule_scan_count
+       (SELECT COUNT(*) FROM rule_scan)                               AS rule_scan_count
 
 $$ LANGUAGE sql STABLE;
 
 
 CREATE FUNCTION host_stats() RETURNS host_stats AS
 $$
-SELECT count(*)
+SELECT COUNT(*)
 FROM host;
 
 $$ LANGUAGE sql STABLE;
@@ -199,9 +199,9 @@ $$ LANGUAGE sql STABLE;
 
 CREATE FUNCTION time_series_stats() RETURNS setof day_stats AS
 $$
-SELECT dates.day, count(rule_id), count(DISTINCT host_id)
-FROM (SELECT generate_series(now() - INTERVAL '7 days', now(), '1 day')::date AS day) dates
-         LEFT JOIN host_scan ON date_trunc('day', created_at) = dates.day
+SELECT dates.day, COUNT(rule_id), COUNT(DISTINCT host_id)
+FROM (SELECT GENERATE_SERIES(NOW() - INTERVAL '7 days', NOW(), '1 day')::date AS day) dates
+         LEFT JOIN host_scan ON DATE_TRUNC('day', created_at) = dates.day
          LEFT JOIN rule_scan ON host_scan.id = rule_scan.host_scan_id
 GROUP BY dates.day;
 
@@ -220,7 +220,7 @@ $$ LANGUAGE sql STABLE;
 CREATE FUNCTION rule_host_count(r rule) RETURNS bigint AS
 $$
 
-SELECT count(DISTINCT host_id)
+SELECT COUNT(DISTINCT host_id)
 FROM host_scan
          JOIN rule_scan ON host_scan.id = host_scan_id
 WHERE rule_scan.rule_id = r.id;
@@ -242,7 +242,7 @@ $$ LANGUAGE sql STABLE;
 CREATE FUNCTION rule_has_match(r rule) RETURNS boolean AS
 $$
 
-SELECT exists(SELECT 1
+SELECT EXISTS(SELECT 1
               FROM string_match
                        JOIN rule_scan ON string_match.rule_scan_id = rule_scan.id
               WHERE rule_id = r.id);
@@ -254,7 +254,7 @@ $$
 
 SELECT *
 FROM host
-WHERE exists(SELECT 1
+WHERE EXISTS(SELECT 1
              FROM host_scan
                       JOIN rule_scan ON host_scan.id = rule_scan.host_scan_id
                       JOIN string_match sm ON rule_scan.id = sm.rule_scan_id
@@ -267,7 +267,7 @@ $$ LANGUAGE sql STABLE;
 CREATE FUNCTION rule_is_disabled(r rule) RETURNS boolean AS
 $$
 
-SELECT exists(SELECT 1 FROM rule_disable WHERE rule_id = r.id);
+SELECT EXISTS(SELECT 1 FROM rule_disable WHERE rule_id = r.id);
 
 $$ LANGUAGE sql STABLE;
 
@@ -284,7 +284,7 @@ CREATE FUNCTION disable_rule(id int) RETURNS void AS
 $$
 
 INSERT INTO rule_disable (account, rule_id)
-VALUES (current_setting('insights.account'), id);
+VALUES (CURRENT_SETTING('insights.account'), id);
 
 $$ LANGUAGE sql VOLATILE;
 
@@ -307,7 +307,7 @@ CREATE TYPE matched_string AS
 );
 CREATE TYPE scanned_rule AS
 (
-    rule_id         int,
+    rule_name       text,
     strings_matched matched_string[]
 );
 
@@ -321,32 +321,36 @@ $$
 DECLARE
     host_scan_id  int;
     rule_scan_id  int;
+    rule_id       int;
     scannedRule   scanned_rule;
     matchedString matched_string;
 
 BEGIN
     INSERT INTO host_scan(created_at, host_id)
-    VALUES (now(), (SELECT id FROM host WHERE inventory_id = current_setting('insights.host_uuid')::uuid))
+    VALUES (NOW(), (SELECT id FROM host WHERE inventory_id = CURRENT_SETTING('insights.host_uuid')::uuid))
     RETURNING id INTO host_scan_id;
 
     IF scannedHost.rules_scanned IS NOT NULL THEN
         FOREACH scannedRule IN ARRAY scannedHost.rules_scanned
             LOOP
-                INSERT INTO rule_scan (host_scan_id, rule_id)
-                SELECT host_scan_id, scannedRule.rule_id
-                RETURNING id INTO rule_scan_id;
+                SELECT id INTO rule_id FROM rule WHERE name = scannedRule.rule_name;
+                IF rule_id IS NOT NULL THEN
+                    INSERT INTO rule_scan (host_scan_id, rule_id)
+                    SELECT host_scan_id, rule_id
+                    RETURNING id INTO rule_scan_id;
 
-                IF scannedRule.strings_matched IS NOT NULL THEN
-                    FOREACH matchedString IN ARRAY scannedRule.strings_matched
-                        LOOP
-                            INSERT INTO string_match(rule_scan_id, source, string_offset, string_identifier, string_data)
-                            SELECT rule_scan_id,
-                                   matchedString.source,
-                                   matchedString.string_offset,
-                                   matchedString.string_identifier,
-                                   matchedString.string_data;
-                        END LOOP;
-                    PERFORM graphile_worker.add_job('detected_malware', to_json(scannedRule));
+                    IF scannedRule.strings_matched IS NOT NULL THEN
+                        FOREACH matchedString IN ARRAY scannedRule.strings_matched
+                            LOOP
+                                INSERT INTO string_match(rule_scan_id, source, string_offset, string_identifier, string_data)
+                                SELECT rule_scan_id,
+                                       matchedString.source,
+                                       matchedString.string_offset,
+                                       matchedString.string_identifier,
+                                       matchedString.string_data;
+                            END LOOP;
+                        PERFORM graphile_worker.add_job('detected_malware', TO_JSON(scannedRule));
+                    END IF;
                 END IF;
             END LOOP;
     END IF;
@@ -355,7 +359,8 @@ BEGIN
 
 END;
 
-$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;
+$$ LANGUAGE plpgsql VOLATILE
+                    SECURITY DEFINER;
 
 
 
@@ -397,8 +402,8 @@ VALUES (2, 1),
 
 
 INSERT INTO host_scan (host_id, created_at)
-VALUES (1, now() - INTERVAL '1 day'),
-       (1, now() - INTERVAL '3 day');
+VALUES (1, NOW() - INTERVAL '1 day'),
+       (1, NOW() - INTERVAL '3 day');
 INSERT INTO rule_scan (rule_id, host_scan_id)
 VALUES (1, 2),
        (2, 2),

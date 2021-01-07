@@ -1,388 +1,3 @@
-"""
-A signed eight-byte integer. The upper big integer values are greater than the
-max value for a JavaScript number. Therefore all big integers will be output as
-strings and not numbers.
-"""
-scalar BigInt
-
-"""A location in a connection that can be used for resuming pagination."""
-scalar Cursor
-
-"""The day, does not include a time."""
-scalar Date
-
-"""
-A point in time as described by the [ISO
-8601](https://en.wikipedia.org/wiki/ISO_8601) standard. May or may not include a timezone.
-"""
-scalar Datetime
-
-type DayStat {
-  day: Date
-  ruleScanCount: BigInt
-  hostScanCount: BigInt
-}
-
-"""A connection to a list of `DayStat` values."""
-type DayStatsConnection {
-  """A list of `DayStat` objects."""
-  nodes: [DayStat!]!
-
-  """
-  A list of edges which contains the `DayStat` and cursor to aid in pagination.
-  """
-  edges: [DayStatsEdge!]!
-
-  """Information to aid in pagination."""
-  pageInfo: PageInfo!
-
-  """The count of *all* `DayStat` you could get from the connection."""
-  totalCount: Int!
-}
-
-"""A `DayStat` edge in the connection."""
-type DayStatsEdge {
-  """A cursor for use in pagination."""
-  cursor: Cursor
-
-  """The `DayStat` at the end of the edge."""
-  node: DayStat!
-}
-
-"""All input for the `disableRule` mutation."""
-input DisableRuleInput {
-  """
-  An arbitrary string value with no semantic meaning. Will be included in the
-  payload verbatim. May be used to track mutations by the client.
-  """
-  clientMutationId: String
-  id: Int
-}
-
-"""The output of our `disableRule` mutation."""
-type DisableRulePayload {
-  """
-  The exact same `clientMutationId` that was provided in the mutation input,
-  unchanged and unused. May be used by a client to track mutations.
-  """
-  clientMutationId: String
-
-  """
-  Our root query field type. Allows us to run any query from our mutation payload.
-  """
-  query: Query
-}
-
-"""All input for the `enableRule` mutation."""
-input EnableRuleInput {
-  """
-  An arbitrary string value with no semantic meaning. Will be included in the
-  payload verbatim. May be used to track mutations by the client.
-  """
-  clientMutationId: String
-  id: Int
-}
-
-"""The output of our `enableRule` mutation."""
-type EnableRulePayload {
-  """
-  The exact same `clientMutationId` that was provided in the mutation input,
-  unchanged and unused. May be used by a client to track mutations.
-  """
-  clientMutationId: String
-
-  """
-  Our root query field type. Allows us to run any query from our mutation payload.
-  """
-  query: Query
-}
-
-type Host implements Node {
-  """
-  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
-  """
-  nodeId: ID!
-  id: Int!
-  account: String
-  hostname: String
-  tags: JSON
-  inventoryId: UUID
-
-  """Reads and enables pagination through a set of `HostScan`."""
-  hostScans(
-    """Only read the first `n` values of the set."""
-    first: Int
-
-    """Only read the last `n` values of the set."""
-    last: Int
-
-    """
-    Skip the first `n` values from our `after` cursor, an alternative to cursor
-    based pagination. May not be used with `last`.
-    """
-    offset: Int
-
-    """Read all values in the set before (above) this cursor."""
-    before: Cursor
-
-    """Read all values in the set after (below) this cursor."""
-    after: Cursor
-
-    """The method to use when ordering `HostScan`."""
-    orderBy: [HostScansOrderBy!] = [PRIMARY_KEY_ASC]
-
-    """
-    A condition to be used in determining which values should be returned by the collection.
-    """
-    condition: HostScanCondition
-  ): HostScansConnection!
-
-  """Reads and enables pagination through a set of `HostScan`."""
-  hostScansList(
-    """Only read the first `n` values of the set."""
-    first: Int
-
-    """Skip the first `n` values."""
-    offset: Int
-
-    """The method to use when ordering `HostScan`."""
-    orderBy: [HostScansOrderBy!]
-
-    """
-    A condition to be used in determining which values should be returned by the collection.
-    """
-    condition: HostScanCondition
-  ): [HostScan!]!
-  lastScanDate: Datetime
-}
-
-"""
-A condition to be used against `Host` object types. All fields are tested for equality and combined with a logical ‘and.’
-"""
-input HostCondition {
-  """Checks for equality with the object’s `id` field."""
-  id: Int
-
-  """Checks for equality with the object’s `hostname` field."""
-  hostname: String
-}
-
-type HostScan implements Node {
-  """
-  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
-  """
-  nodeId: ID!
-  id: Int!
-  createdAt: Datetime
-  hostId: Int!
-
-  """Reads a single `Host` that is related to this `HostScan`."""
-  host: Host
-
-  """Reads and enables pagination through a set of `RuleScan`."""
-  ruleScans(
-    """Only read the first `n` values of the set."""
-    first: Int
-
-    """Only read the last `n` values of the set."""
-    last: Int
-
-    """
-    Skip the first `n` values from our `after` cursor, an alternative to cursor
-    based pagination. May not be used with `last`.
-    """
-    offset: Int
-
-    """Read all values in the set before (above) this cursor."""
-    before: Cursor
-
-    """Read all values in the set after (below) this cursor."""
-    after: Cursor
-
-    """The method to use when ordering `RuleScan`."""
-    orderBy: [RuleScansOrderBy!] = [PRIMARY_KEY_ASC]
-
-    """
-    A condition to be used in determining which values should be returned by the collection.
-    """
-    condition: RuleScanCondition
-  ): RuleScansConnection!
-
-  """Reads and enables pagination through a set of `RuleScan`."""
-  ruleScansList(
-    """Only read the first `n` values of the set."""
-    first: Int
-
-    """Skip the first `n` values."""
-    offset: Int
-
-    """The method to use when ordering `RuleScan`."""
-    orderBy: [RuleScansOrderBy!]
-
-    """
-    A condition to be used in determining which values should be returned by the collection.
-    """
-    condition: RuleScanCondition
-  ): [RuleScan!]!
-}
-
-"""
-A condition to be used against `HostScan` object types. All fields are tested
-for equality and combined with a logical ‘and.’
-"""
-input HostScanCondition {
-  """Checks for equality with the object’s `id` field."""
-  id: Int
-
-  """Checks for equality with the object’s `createdAt` field."""
-  createdAt: Datetime
-
-  """Checks for equality with the object’s `hostId` field."""
-  hostId: Int
-}
-
-"""A connection to a list of `HostScan` values."""
-type HostScansConnection {
-  """A list of `HostScan` objects."""
-  nodes: [HostScan!]!
-
-  """
-  A list of edges which contains the `HostScan` and cursor to aid in pagination.
-  """
-  edges: [HostScansEdge!]!
-
-  """Information to aid in pagination."""
-  pageInfo: PageInfo!
-
-  """The count of *all* `HostScan` you could get from the connection."""
-  totalCount: Int!
-}
-
-"""A `HostScan` edge in the connection."""
-type HostScansEdge {
-  """A cursor for use in pagination."""
-  cursor: Cursor
-
-  """The `HostScan` at the end of the edge."""
-  node: HostScan!
-}
-
-"""Methods to use when ordering `HostScan`."""
-enum HostScansOrderBy {
-  NATURAL
-  ID_ASC
-  ID_DESC
-  CREATED_AT_ASC
-  CREATED_AT_DESC
-  HOST_ID_ASC
-  HOST_ID_DESC
-  PRIMARY_KEY_ASC
-  PRIMARY_KEY_DESC
-}
-
-"""A connection to a list of `Host` values."""
-type HostsConnection {
-  """A list of `Host` objects."""
-  nodes: [Host!]!
-
-  """
-  A list of edges which contains the `Host` and cursor to aid in pagination.
-  """
-  edges: [HostsEdge!]!
-
-  """Information to aid in pagination."""
-  pageInfo: PageInfo!
-
-  """The count of *all* `Host` you could get from the connection."""
-  totalCount: Int!
-}
-
-"""A `Host` edge in the connection."""
-type HostsEdge {
-  """A cursor for use in pagination."""
-  cursor: Cursor
-
-  """The `Host` at the end of the edge."""
-  node: Host!
-}
-
-"""Methods to use when ordering `Host`."""
-enum HostsOrderBy {
-  NATURAL
-  ID_ASC
-  ID_DESC
-  HOSTNAME_ASC
-  HOSTNAME_DESC
-  LAST_SCAN_DATE_ASC
-  LAST_SCAN_DATE_DESC
-  PRIMARY_KEY_ASC
-  PRIMARY_KEY_DESC
-}
-
-type HostStat {
-  hostCount: BigInt
-}
-
-"""
-The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
-"""
-scalar JSON
-
-"""An input for mutations affecting `MatchedString`"""
-input MatchedStringInput {
-  source: String
-  stringOffset: BigInt
-  stringIdentifier: String
-  stringData: String
-}
-
-"""
-The root mutation type which contains root level fields which mutate data.
-"""
-type Mutation {
-  disableRule(
-    """
-    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
-    """
-    input: DisableRuleInput!
-  ): DisableRulePayload
-  enableRule(
-    """
-    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
-    """
-    input: EnableRuleInput!
-  ): EnableRulePayload
-  recordHostScan(
-    """
-    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
-    """
-    input: RecordHostScanInput!
-  ): RecordHostScanPayload
-}
-
-"""An object with a globally unique `ID`."""
-interface Node {
-  """
-  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
-  """
-  nodeId: ID!
-}
-
-"""Information about pagination in a connection."""
-type PageInfo {
-  """When paginating forwards, are there more items?"""
-  hasNextPage: Boolean!
-
-  """When paginating backwards, are there more items?"""
-  hasPreviousPage: Boolean!
-
-  """When paginating backwards, the cursor to continue."""
-  startCursor: Cursor
-
-  """When paginating forwards, the cursor to continue."""
-  endCursor: Cursor
-}
-
 """The root query type which gives access points into the data universe."""
 type Query implements Node {
   """
@@ -588,6 +203,7 @@ type Query implements Node {
   host(id: Int!): Host
   hostScan(id: Int!): HostScan
   rule(id: Int!): Rule
+  ruleByName(name: String!): Rule
   ruleScan(id: Int!): RuleScan
   stringMatch(id: Int!): StringMatch
   hostStats: HostStat
@@ -707,29 +323,259 @@ type Query implements Node {
   ): StringMatch
 }
 
-"""All input for the `recordHostScan` mutation."""
-input RecordHostScanInput {
+"""An object with a globally unique `ID`."""
+interface Node {
   """
-  An arbitrary string value with no semantic meaning. Will be included in the
-  payload verbatim. May be used to track mutations by the client.
+  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
   """
-  clientMutationId: String
-  scannedhost: ScannedHostInput
+  nodeId: ID!
 }
 
-"""The output of our `recordHostScan` mutation."""
-type RecordHostScanPayload {
-  """
-  The exact same `clientMutationId` that was provided in the mutation input,
-  unchanged and unused. May be used by a client to track mutations.
-  """
-  clientMutationId: String
-  success: Boolean
+"""A connection to a list of `Host` values."""
+type HostsConnection {
+  """A list of `Host` objects."""
+  nodes: [Host!]!
 
   """
-  Our root query field type. Allows us to run any query from our mutation payload.
+  A list of edges which contains the `Host` and cursor to aid in pagination.
   """
-  query: Query
+  edges: [HostsEdge!]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """The count of *all* `Host` you could get from the connection."""
+  totalCount: Int!
+}
+
+type Host implements Node {
+  """
+  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  """
+  nodeId: ID!
+  id: Int!
+  account: String
+  hostname: String
+  tags: JSON
+  inventoryId: UUID
+
+  """Reads and enables pagination through a set of `HostScan`."""
+  hostScans(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """The method to use when ordering `HostScan`."""
+    orderBy: [HostScansOrderBy!] = [PRIMARY_KEY_ASC]
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: HostScanCondition
+  ): HostScansConnection!
+
+  """Reads and enables pagination through a set of `HostScan`."""
+  hostScansList(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Skip the first `n` values."""
+    offset: Int
+
+    """The method to use when ordering `HostScan`."""
+    orderBy: [HostScansOrderBy!]
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: HostScanCondition
+  ): [HostScan!]!
+  lastScanDate: Datetime
+}
+
+"""
+The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSON
+
+"""
+A universally unique identifier as defined by [RFC 4122](https://tools.ietf.org/html/rfc4122).
+"""
+scalar UUID
+
+"""A connection to a list of `HostScan` values."""
+type HostScansConnection {
+  """A list of `HostScan` objects."""
+  nodes: [HostScan!]!
+
+  """
+  A list of edges which contains the `HostScan` and cursor to aid in pagination.
+  """
+  edges: [HostScansEdge!]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """The count of *all* `HostScan` you could get from the connection."""
+  totalCount: Int!
+}
+
+type HostScan implements Node {
+  """
+  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  """
+  nodeId: ID!
+  id: Int!
+  createdAt: Datetime
+  hostId: Int!
+
+  """Reads a single `Host` that is related to this `HostScan`."""
+  host: Host
+
+  """Reads and enables pagination through a set of `RuleScan`."""
+  ruleScans(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """The method to use when ordering `RuleScan`."""
+    orderBy: [RuleScansOrderBy!] = [PRIMARY_KEY_ASC]
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: RuleScanCondition
+  ): RuleScansConnection!
+
+  """Reads and enables pagination through a set of `RuleScan`."""
+  ruleScansList(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Skip the first `n` values."""
+    offset: Int
+
+    """The method to use when ordering `RuleScan`."""
+    orderBy: [RuleScansOrderBy!]
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: RuleScanCondition
+  ): [RuleScan!]!
+}
+
+"""
+A point in time as described by the [ISO
+8601](https://en.wikipedia.org/wiki/ISO_8601) standard. May or may not include a timezone.
+"""
+scalar Datetime
+
+"""A connection to a list of `RuleScan` values."""
+type RuleScansConnection {
+  """A list of `RuleScan` objects."""
+  nodes: [RuleScan!]!
+
+  """
+  A list of edges which contains the `RuleScan` and cursor to aid in pagination.
+  """
+  edges: [RuleScansEdge!]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """The count of *all* `RuleScan` you could get from the connection."""
+  totalCount: Int!
+}
+
+type RuleScan implements Node {
+  """
+  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  """
+  nodeId: ID!
+  id: Int!
+  hostScanId: Int!
+  ruleId: Int!
+
+  """Reads a single `HostScan` that is related to this `RuleScan`."""
+  hostScan: HostScan
+
+  """Reads a single `Rule` that is related to this `RuleScan`."""
+  rule: Rule
+
+  """Reads and enables pagination through a set of `StringMatch`."""
+  stringMatches(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """The method to use when ordering `StringMatch`."""
+    orderBy: [StringMatchesOrderBy!] = [PRIMARY_KEY_ASC]
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: StringMatchCondition
+  ): StringMatchesConnection!
+
+  """Reads and enables pagination through a set of `StringMatch`."""
+  stringMatchesList(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Skip the first `n` values."""
+    offset: Int
+
+    """The method to use when ordering `StringMatch`."""
+    orderBy: [StringMatchesOrderBy!]
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: StringMatchCondition
+  ): [StringMatch!]!
 }
 
 type Rule implements Node {
@@ -845,86 +691,20 @@ type Rule implements Node {
   lastMatchDate: Datetime
 }
 
-"""
-A condition to be used against `Rule` object types. All fields are tested for equality and combined with a logical ‘and.’
-"""
-input RuleCondition {
-  """Checks for equality with the object’s `id` field."""
-  id: Int
+"""A location in a connection that can be used for resuming pagination."""
+scalar Cursor
 
-  """Checks for equality with the object’s `name` field."""
-  name: String
-
-  """Checks for equality with the object’s `createdAt` field."""
-  createdAt: Datetime
-
-  """Checks for equality with the object’s `hasMatch` field."""
-  hasMatch: Boolean
-
-  """Checks for equality with the object’s `isDisabled` field."""
-  isDisabled: Boolean
-}
-
-type RuleScan implements Node {
-  """
-  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
-  """
-  nodeId: ID!
-  id: Int!
-  hostScanId: Int!
-  ruleId: Int!
-
-  """Reads a single `HostScan` that is related to this `RuleScan`."""
-  hostScan: HostScan
-
-  """Reads a single `Rule` that is related to this `RuleScan`."""
-  rule: Rule
-
-  """Reads and enables pagination through a set of `StringMatch`."""
-  stringMatches(
-    """Only read the first `n` values of the set."""
-    first: Int
-
-    """Only read the last `n` values of the set."""
-    last: Int
-
-    """
-    Skip the first `n` values from our `after` cursor, an alternative to cursor
-    based pagination. May not be used with `last`.
-    """
-    offset: Int
-
-    """Read all values in the set before (above) this cursor."""
-    before: Cursor
-
-    """Read all values in the set after (below) this cursor."""
-    after: Cursor
-
-    """The method to use when ordering `StringMatch`."""
-    orderBy: [StringMatchesOrderBy!] = [PRIMARY_KEY_ASC]
-
-    """
-    A condition to be used in determining which values should be returned by the collection.
-    """
-    condition: StringMatchCondition
-  ): StringMatchesConnection!
-
-  """Reads and enables pagination through a set of `StringMatch`."""
-  stringMatchesList(
-    """Only read the first `n` values of the set."""
-    first: Int
-
-    """Skip the first `n` values."""
-    offset: Int
-
-    """The method to use when ordering `StringMatch`."""
-    orderBy: [StringMatchesOrderBy!]
-
-    """
-    A condition to be used in determining which values should be returned by the collection.
-    """
-    condition: StringMatchCondition
-  ): [StringMatch!]!
+"""Methods to use when ordering `RuleScan`."""
+enum RuleScansOrderBy {
+  NATURAL
+  ID_ASC
+  ID_DESC
+  HOST_SCAN_ID_ASC
+  HOST_SCAN_ID_DESC
+  RULE_ID_ASC
+  RULE_ID_DESC
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
 }
 
 """
@@ -942,21 +722,115 @@ input RuleScanCondition {
   ruleId: Int
 }
 
-"""A connection to a list of `RuleScan` values."""
-type RuleScansConnection {
-  """A list of `RuleScan` objects."""
-  nodes: [RuleScan!]!
+"""Methods to use when ordering `Host`."""
+enum HostsOrderBy {
+  NATURAL
+  ID_ASC
+  ID_DESC
+  HOSTNAME_ASC
+  HOSTNAME_DESC
+  LAST_SCAN_DATE_ASC
+  LAST_SCAN_DATE_DESC
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+}
+
+"""
+A condition to be used against `Host` object types. All fields are tested for equality and combined with a logical ‘and.’
+"""
+input HostCondition {
+  """Checks for equality with the object’s `id` field."""
+  id: Int
+
+  """Checks for equality with the object’s `hostname` field."""
+  hostname: String
+}
+
+"""
+A signed eight-byte integer. The upper big integer values are greater than the
+max value for a JavaScript number. Therefore all big integers will be output as
+strings and not numbers.
+"""
+scalar BigInt
+
+"""A connection to a list of `StringMatch` values."""
+type StringMatchesConnection {
+  """A list of `StringMatch` objects."""
+  nodes: [StringMatch!]!
 
   """
-  A list of edges which contains the `RuleScan` and cursor to aid in pagination.
+  A list of edges which contains the `StringMatch` and cursor to aid in pagination.
   """
-  edges: [RuleScansEdge!]!
+  edges: [StringMatchesEdge!]!
 
   """Information to aid in pagination."""
   pageInfo: PageInfo!
 
-  """The count of *all* `RuleScan` you could get from the connection."""
+  """The count of *all* `StringMatch` you could get from the connection."""
   totalCount: Int!
+}
+
+type StringMatch implements Node {
+  """
+  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
+  """
+  nodeId: ID!
+  id: Int!
+  ruleScanId: Int!
+  source: String
+  stringOffset: BigInt
+  stringIdentifier: String
+  stringData: String
+
+  """Reads a single `RuleScan` that is related to this `StringMatch`."""
+  ruleScan: RuleScan
+}
+
+"""A `StringMatch` edge in the connection."""
+type StringMatchesEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `StringMatch` at the end of the edge."""
+  node: StringMatch!
+}
+
+"""Information about pagination in a connection."""
+type PageInfo {
+  """When paginating forwards, are there more items?"""
+  hasNextPage: Boolean!
+
+  """When paginating backwards, are there more items?"""
+  hasPreviousPage: Boolean!
+
+  """When paginating backwards, the cursor to continue."""
+  startCursor: Cursor
+
+  """When paginating forwards, the cursor to continue."""
+  endCursor: Cursor
+}
+
+"""Methods to use when ordering `StringMatch`."""
+enum StringMatchesOrderBy {
+  NATURAL
+  ID_ASC
+  ID_DESC
+  RULE_SCAN_ID_ASC
+  RULE_SCAN_ID_DESC
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+}
+
+"""
+A condition to be used against `StringMatch` object types. All fields are tested
+for equality and combined with a logical ‘and.’
+"""
+input StringMatchCondition {
+  """Checks for equality with the object’s `id` field."""
+  id: Int
+
+  """Checks for equality with the object’s `ruleScanId` field."""
+  ruleScanId: Int
 }
 
 """A `RuleScan` edge in the connection."""
@@ -968,17 +842,65 @@ type RuleScansEdge {
   node: RuleScan!
 }
 
-"""Methods to use when ordering `RuleScan`."""
-enum RuleScansOrderBy {
+"""A `HostScan` edge in the connection."""
+type HostScansEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `HostScan` at the end of the edge."""
+  node: HostScan!
+}
+
+"""Methods to use when ordering `HostScan`."""
+enum HostScansOrderBy {
   NATURAL
   ID_ASC
   ID_DESC
-  HOST_SCAN_ID_ASC
-  HOST_SCAN_ID_DESC
-  RULE_ID_ASC
-  RULE_ID_DESC
+  CREATED_AT_ASC
+  CREATED_AT_DESC
+  HOST_ID_ASC
+  HOST_ID_DESC
   PRIMARY_KEY_ASC
   PRIMARY_KEY_DESC
+}
+
+"""
+A condition to be used against `HostScan` object types. All fields are tested
+for equality and combined with a logical ‘and.’
+"""
+input HostScanCondition {
+  """Checks for equality with the object’s `id` field."""
+  id: Int
+
+  """Checks for equality with the object’s `createdAt` field."""
+  createdAt: Datetime
+
+  """Checks for equality with the object’s `hostId` field."""
+  hostId: Int
+}
+
+"""A `Host` edge in the connection."""
+type HostsEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `Host` at the end of the edge."""
+  node: Host!
+}
+
+type HostStat {
+  hostCount: BigInt
+}
+
+type RuleStat {
+  enabledCount: BigInt
+  disabledCount: BigInt
+  matchedCount: BigInt
+}
+
+type ScanStat {
+  ruleScanHitCount: BigInt
+  ruleScanCount: BigInt
 }
 
 """A connection to a list of `Rule` values."""
@@ -1028,10 +950,156 @@ enum RulesOrderBy {
   PRIMARY_KEY_DESC
 }
 
-type RuleStat {
-  enabledCount: BigInt
-  disabledCount: BigInt
-  matchedCount: BigInt
+"""
+A condition to be used against `Rule` object types. All fields are tested for equality and combined with a logical ‘and.’
+"""
+input RuleCondition {
+  """Checks for equality with the object’s `id` field."""
+  id: Int
+
+  """Checks for equality with the object’s `name` field."""
+  name: String
+
+  """Checks for equality with the object’s `createdAt` field."""
+  createdAt: Datetime
+
+  """Checks for equality with the object’s `hasMatch` field."""
+  hasMatch: Boolean
+
+  """Checks for equality with the object’s `isDisabled` field."""
+  isDisabled: Boolean
+}
+
+"""A connection to a list of `DayStat` values."""
+type DayStatsConnection {
+  """A list of `DayStat` objects."""
+  nodes: [DayStat!]!
+
+  """
+  A list of edges which contains the `DayStat` and cursor to aid in pagination.
+  """
+  edges: [DayStatsEdge!]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """The count of *all* `DayStat` you could get from the connection."""
+  totalCount: Int!
+}
+
+type DayStat {
+  day: Date
+  ruleScanCount: BigInt
+  hostScanCount: BigInt
+}
+
+"""The day, does not include a time."""
+scalar Date
+
+"""A `DayStat` edge in the connection."""
+type DayStatsEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `DayStat` at the end of the edge."""
+  node: DayStat!
+}
+
+"""
+The root mutation type which contains root level fields which mutate data.
+"""
+type Mutation {
+  disableRule(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DisableRuleInput!
+  ): DisableRulePayload
+  enableRule(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: EnableRuleInput!
+  ): EnableRulePayload
+  recordHostScan(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: RecordHostScanInput!
+  ): RecordHostScanPayload
+}
+
+"""The output of our `disableRule` mutation."""
+type DisableRulePayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+}
+
+"""All input for the `disableRule` mutation."""
+input DisableRuleInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  id: Int
+}
+
+"""The output of our `enableRule` mutation."""
+type EnableRulePayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+}
+
+"""All input for the `enableRule` mutation."""
+input EnableRuleInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  id: Int
+}
+
+"""The output of our `recordHostScan` mutation."""
+type RecordHostScanPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+  success: Boolean
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+}
+
+"""All input for the `recordHostScan` mutation."""
+input RecordHostScanInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  scannedhost: ScannedHostInput
 }
 
 """An input for mutations affecting `ScannedHost`"""
@@ -1041,81 +1109,14 @@ input ScannedHostInput {
 
 """An input for mutations affecting `ScannedRule`"""
 input ScannedRuleInput {
-  ruleId: Int
+  ruleName: String
   stringsMatched: [MatchedStringInput]
 }
 
-type ScanStat {
-  ruleScanHitCount: BigInt
-  ruleScanCount: BigInt
-}
-
-type StringMatch implements Node {
-  """
-  A globally unique identifier. Can be used in various places throughout the system to identify this single value.
-  """
-  nodeId: ID!
-  id: Int!
-  ruleScanId: Int!
+"""An input for mutations affecting `MatchedString`"""
+input MatchedStringInput {
   source: String
   stringOffset: BigInt
   stringIdentifier: String
   stringData: String
-
-  """Reads a single `RuleScan` that is related to this `StringMatch`."""
-  ruleScan: RuleScan
 }
-
-"""
-A condition to be used against `StringMatch` object types. All fields are tested
-for equality and combined with a logical ‘and.’
-"""
-input StringMatchCondition {
-  """Checks for equality with the object’s `id` field."""
-  id: Int
-
-  """Checks for equality with the object’s `ruleScanId` field."""
-  ruleScanId: Int
-}
-
-"""A connection to a list of `StringMatch` values."""
-type StringMatchesConnection {
-  """A list of `StringMatch` objects."""
-  nodes: [StringMatch!]!
-
-  """
-  A list of edges which contains the `StringMatch` and cursor to aid in pagination.
-  """
-  edges: [StringMatchesEdge!]!
-
-  """Information to aid in pagination."""
-  pageInfo: PageInfo!
-
-  """The count of *all* `StringMatch` you could get from the connection."""
-  totalCount: Int!
-}
-
-"""A `StringMatch` edge in the connection."""
-type StringMatchesEdge {
-  """A cursor for use in pagination."""
-  cursor: Cursor
-
-  """The `StringMatch` at the end of the edge."""
-  node: StringMatch!
-}
-
-"""Methods to use when ordering `StringMatch`."""
-enum StringMatchesOrderBy {
-  NATURAL
-  ID_ASC
-  ID_DESC
-  RULE_SCAN_ID_ASC
-  RULE_SCAN_ID_DESC
-  PRIMARY_KEY_ASC
-  PRIMARY_KEY_DESC
-}
-
-"""
-A universally unique identifier as defined by [RFC 4122](https://tools.ietf.org/html/rfc4122).
-"""
-scalar UUID
