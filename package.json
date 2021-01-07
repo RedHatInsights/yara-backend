@@ -6,8 +6,9 @@
   "scripts": {
     "start": "node src/app.js",
     "migrate": "graphile-worker --schema-only && graphile-migrate migrate",
-    "seed": "graphile-migrate run dev/seed_data.sql",
-    "demo": "sleep 5 && npm run migrate && npm run seed && npm start",
+    "seed-prod": "graphile-migrate run seed/seed_prod.sql",
+    "seed-dev": "graphile-migrate run seed/seed_dev.sql",
+    "demo": "sleep 5 && npm run migrate && npm run seed-dev && npm start",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

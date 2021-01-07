@@ -1,16 +1,15 @@
 ### For frontend devs:
-`docker-compose up`
+`docker-compose up --build`
 
 ### For backend devs
-``` bash
+```bash
 npm install
 cp .env.example .env
+export $(xargs <.env)
 docker-compose up -d db
 tsc
-graphile-migrate watch
-```
-Then in a new console
-```
+npm run migrate
+npm run seed-prod
 node --require ts-node/register src/app.ts
 ```
 
@@ -18,3 +17,9 @@ node --require ts-node/register src/app.ts
 The api browser will be available at http://localhost:3000/graphiql
 
 The actual api will be on http://localhost:3000/graphql
+
+### To reset all state - start fresh
+```bash
+docker-compose down
+```
+
