@@ -1,11 +1,13 @@
 --! Previous: -
---! Hash: sha1:d2ed0b1edb40f397bf2e63a86501744eaba8795f
+--! Hash: sha1:8751f1aa92f508c62c8a88817b25127b7b96da02
 
 DROP FUNCTION IF EXISTS rule_host_count(rule);
 DROP FUNCTION IF EXISTS rule_affected_hosts(rule, text);
 DROP FUNCTION IF EXISTS rule_last_match_date(rule);
 DROP FUNCTION IF EXISTS rule_has_match(rule);
 DROP FUNCTION IF EXISTS rule_is_disabled(rule);
+DROP FUNCTION IF EXISTS string_match_rule_id(string_match);
+DROP FUNCTION IF EXISTS string_match_host_id(string_match);
 DROP FUNCTION IF EXISTS host_last_scan_date(host);
 DROP FUNCTION IF EXISTS disable_rule(int);
 DROP FUNCTION IF EXISTS enable_rule(int);
@@ -271,6 +273,23 @@ SELECT EXISTS(SELECT 1 FROM rule_disable WHERE rule_id = r.id);
 
 $$ LANGUAGE sql STABLE;
 
+CREATE FUNCTION string_match_rule_id(sm string_match) RETURNS int AS
+$$
+
+SELECT rule_id FROM rule_scan WHERE id = sm.rule_scan_id;
+
+$$ LANGUAGE sql STABLE;
+
+CREATE FUNCTION string_match_host_id(sm string_match) RETURNS int AS
+$$
+
+SELECT host_id
+FROM host_scan
+         JOIN rule_scan rs ON host_scan.id = rs.host_scan_id
+WHERE rs.id = sm.rule_scan_id;
+
+$$ LANGUAGE sql STABLE;
+
 CREATE FUNCTION host_last_scan_date(h host) RETURNS timestamp AS
 $$
 SELECT created_at
@@ -376,6 +395,8 @@ COMMENT ON FUNCTION rule_affected_hosts(rule, text) IS E'@sortable\n@filterable'
 COMMENT ON FUNCTION rule_last_match_date(rule) IS E'@sortable';
 COMMENT ON FUNCTION rule_has_match(rule) IS E'@sortable\n@filterable';
 COMMENT ON FUNCTION rule_is_disabled(rule) IS E'@sortable\n@filterable';
+COMMENT ON FUNCTION string_match_rule_id(string_match) IS E'@sortable\n@filterable';
+COMMENT ON FUNCTION string_match_host_id(string_match) IS E'@sortable\n@filterable';
 COMMENT ON FUNCTION host_last_scan_date(host) IS E'@sortable';
 COMMENT ON FUNCTION record_host_scan(scanned_host) IS E'@resultFieldName success';
 

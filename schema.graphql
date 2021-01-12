@@ -784,6 +784,8 @@ type StringMatch implements Node {
 
   """Reads a single `RuleScan` that is related to this `StringMatch`."""
   ruleScan: RuleScan
+  hostId: Int
+  ruleId: Int
 }
 
 """A `StringMatch` edge in the connection."""
@@ -817,6 +819,10 @@ enum StringMatchesOrderBy {
   ID_DESC
   RULE_SCAN_ID_ASC
   RULE_SCAN_ID_DESC
+  HOST_ID_ASC
+  HOST_ID_DESC
+  RULE_ID_ASC
+  RULE_ID_DESC
   PRIMARY_KEY_ASC
   PRIMARY_KEY_DESC
 }
@@ -831,6 +837,12 @@ input StringMatchCondition {
 
   """Checks for equality with the object’s `ruleScanId` field."""
   ruleScanId: Int
+
+  """Checks for equality with the object’s `hostId` field."""
+  hostId: Int
+
+  """Checks for equality with the object’s `ruleId` field."""
+  ruleId: Int
 }
 
 """A `RuleScan` edge in the connection."""
