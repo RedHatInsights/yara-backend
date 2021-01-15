@@ -1,5 +1,5 @@
 --! Previous: -
---! Hash: sha1:cf977b3087d3e3e0c183cbbf59f6d3ad05ccbce1
+--! Hash: sha1:6d010479e256d16de2c3b5a9be4dd6a7f696dc69
 
 DROP FUNCTION IF EXISTS rule_host_count(rule);
 DROP FUNCTION IF EXISTS rule_affected_hosts(rule, text);
@@ -18,7 +18,6 @@ DROP FUNCTION IF EXISTS scan_stats();
 DROP FUNCTION IF EXISTS host_stats();
 DROP FUNCTION IF EXISTS time_series_stats();
 DROP FUNCTION IF EXISTS search_rules(text);
-DROP TABLE IF EXISTS string_match;
 DROP TYPE IF EXISTS rule_stats;
 DROP TYPE IF EXISTS scan_stats;
 DROP TYPE IF EXISTS host_stats;
@@ -26,6 +25,8 @@ DROP TYPE IF EXISTS day_stats;
 DROP TYPE IF EXISTS scanned_host;
 DROP TYPE IF EXISTS scanned_rule;
 DROP TYPE IF EXISTS matched_string;
+DROP TABLE IF EXISTS host_with_match;
+DROP TABLE IF EXISTS string_match;
 DROP TABLE IF EXISTS rule_scan;
 DROP TABLE IF EXISTS rule_disable;
 DROP TABLE IF EXISTS scan_rule;
@@ -252,18 +253,32 @@ SELECT EXISTS(SELECT 1
 
 $$ LANGUAGE sql STABLE;
 
-CREATE FUNCTION rule_affected_hosts(r rule, host_name text) RETURNS setof host AS
+/*This table is not meant to store any data, it simply acts as a return type
+  for the rule_affected_hosts function.  This needed because graphile does
+  not currently allow regular types to be sorted. */
+CREATE TABLE host_with_match
+(
+    matches string_match[]
+) INHERITS (host);
+COMMENT ON TABLE host_with_match is E'@omit all';
+
+CREATE FUNCTION rule_affected_hosts(r rule, host_name text) RETURNS setof host_with_match AS
 $$
 
-SELECT *
+SELECT host.id,
+       host.account,
+       host.hostname,
+       host.tags,
+       host.inventory_id,
+       ARRAY_AGG((sm.id, sm.rule_scan_id, sm.source, sm.string_offset, sm.string_identifier,
+                  sm.string_data)::string_match)
 FROM host
-WHERE EXISTS(SELECT 1
-             FROM host_scan
-                      JOIN rule_scan ON host_scan.id = rule_scan.host_scan_id
-                      JOIN string_match sm ON rule_scan.id = sm.rule_scan_id
-             WHERE rule_scan.rule_id = r.id
-               AND host_scan.host_id = host.id)
-  AND (host_name IS NULL OR hostname ILIKE ('%' || host_name || '%'));
+         JOIN host_scan hs ON host.id = hs.host_id
+         JOIN rule_scan rs ON hs.id = rs.host_scan_id
+         JOIN string_match sm ON rs.id = sm.rule_scan_id
+WHERE rs.rule_id = r.id
+  AND (host_name IS NULL OR hostname ILIKE ('%' || host_name || '%'))
+GROUP BY 1, 2, 3, 4, 5;
 $$ LANGUAGE sql STABLE;
 
 

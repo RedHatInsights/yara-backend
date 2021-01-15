@@ -53,7 +53,7 @@ const options: PostGraphileOptions = {
     dynamicJson: true,
     setofFunctionsContainNulls: false,
     ignoreRBAC: false,
-    ignoreIndexes: false,
+    ignoreIndexes: true,
     showErrorStack: "json",
     extendedErrors: ["hint", "detail", "errcode"],
     appendPlugins: [require("@graphile-contrib/pg-simplify-inflector")],
