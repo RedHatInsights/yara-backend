@@ -1,5 +1,5 @@
 --! Previous: -
---! Hash: sha1:6d010479e256d16de2c3b5a9be4dd6a7f696dc69
+--! Hash: sha1:30882eed93394dc6e38510220089c7f1a0af7c1c
 
 DROP FUNCTION IF EXISTS rule_host_count(rule);
 DROP FUNCTION IF EXISTS rule_affected_hosts(rule, text);
@@ -9,6 +9,7 @@ DROP FUNCTION IF EXISTS rule_is_disabled(rule);
 DROP FUNCTION IF EXISTS string_match_rule_id(string_match);
 DROP FUNCTION IF EXISTS string_match_host_id(string_match);
 DROP FUNCTION IF EXISTS string_match_scan_date(string_match);
+DROP FUNCTION IF EXISTS host_with_match_last_scan_date(host_with_match);
 DROP FUNCTION IF EXISTS host_last_scan_date(host);
 DROP FUNCTION IF EXISTS disable_rule(int);
 DROP FUNCTION IF EXISTS enable_rule(int);
@@ -260,7 +261,7 @@ CREATE TABLE host_with_match
 (
     matches string_match[]
 ) INHERITS (host);
-COMMENT ON TABLE host_with_match is E'@omit all';
+COMMENT ON TABLE host_with_match IS E'@omit all';
 
 CREATE FUNCTION rule_affected_hosts(r rule, host_name text) RETURNS setof host_with_match AS
 $$
@@ -292,7 +293,9 @@ $$ LANGUAGE sql STABLE;
 CREATE FUNCTION string_match_rule_id(sm string_match) RETURNS int AS
 $$
 
-SELECT rule_id FROM rule_scan WHERE id = sm.rule_scan_id;
+SELECT rule_id
+FROM rule_scan
+WHERE id = sm.rule_scan_id;
 
 $$ LANGUAGE sql STABLE;
 
@@ -323,6 +326,11 @@ FROM host_scan
 WHERE host_scan.host_id = h.id
 ORDER BY created_at DESC
 LIMIT 1;
+$$ LANGUAGE sql STABLE;
+
+CREATE FUNCTION host_with_match_last_scan_date(h host_with_match) RETURNS timestamp AS
+$$
+SELECT host_last_scan_date(h);
 $$ LANGUAGE sql STABLE;
 
 CREATE FUNCTION disable_rule(id int) RETURNS void AS
@@ -425,6 +433,7 @@ COMMENT ON FUNCTION string_match_rule_id(string_match) IS E'@sortable\n@filterab
 COMMENT ON FUNCTION string_match_host_id(string_match) IS E'@sortable\n@filterable';
 COMMENT ON FUNCTION string_match_scan_date(string_match) IS E'@sortable\n@filterable';
 COMMENT ON FUNCTION host_last_scan_date(host) IS E'@sortable';
+COMMENT ON FUNCTION host_with_match_last_scan_date(host_with_match) IS E'@sortable';
 COMMENT ON FUNCTION record_host_scan(scanned_host) IS E'@resultFieldName success';
 
 

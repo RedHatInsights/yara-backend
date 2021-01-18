@@ -746,6 +746,7 @@ type HostWithMatch {
   tags: JSON
   inventoryId: UUID
   matches: [StringMatch]
+  lastScanDate: Datetime
 }
 
 type StringMatch implements Node {
@@ -813,6 +814,8 @@ enum HostWithMatchesOrderBy {
   INVENTORY_ID_DESC
   MATCHES_ASC
   MATCHES_DESC
+  LAST_SCAN_DATE_ASC
+  LAST_SCAN_DATE_DESC
 }
 
 """
