@@ -1,7 +1,11 @@
-### For frontend devs:
+## For frontend devs:
 `docker-compose up --build`
+#### To reset to a fresh db:
+`docker-compose down && docker-compose up --build`
+#### To seed with prod rules:
+`PROD=true docker-compose up --build`
 
-### For backend devs
+## For backend devs
 ```bash
 npm install
 cp .env.example .env

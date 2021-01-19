@@ -25,6 +25,7 @@ services:
       SHADOW_DATABASE_URL: postgres://yara_owner:password@db:5432/yara_shadow
       OWNER_URL: postgres://postgres:postgres@db:5432/yara
       ROOT_DATABASE_URL: postgres://postgres:postgres@db:5432/postgres
+      PROD: ${PROD}
 
     command: npm run demo
 

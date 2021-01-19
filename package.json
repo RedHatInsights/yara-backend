@@ -8,7 +8,7 @@
     "migrate": "graphile-worker --schema-only && graphile-migrate migrate",
     "seed-prod": "graphile-migrate run seed/seed_prod.sql",
     "seed-dev": "graphile-migrate run seed/seed_dev.sql",
-    "demo": "sleep 5 && npm run migrate && npm run seed-dev && npm start",
+    "demo": "sleep 5 && npm run migrate && if [ \"$PROD\" = \"true\" ]; then npm run seed-prod; else npm run seed-dev; fi && npm start",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
