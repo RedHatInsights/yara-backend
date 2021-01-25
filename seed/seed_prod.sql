@@ -1,4 +1,8 @@
 --PGPASSWORD=postgres pg_dump -U postgres -h localhost -p 5434 -d yara -t rule --inserts > seed/seed_prod.sql
+truncate rule CASCADE;
+TRUNCATE host CASCADE;
+INSERT INTO host (account, hostname, inventory_id)
+VALUES ('540155', 'example.system.com', '00000000-0000-0000-0000-000000000000');
 
 INSERT INTO public.rule OVERRIDING SYSTEM VALUE VALUES (1, 'IRIS_Mirai', NULL, '{"usage": "Hunting and Identification", "author": "IBM X-Force IRIS", "md5_hash": "D768F57F122F5BA070FC88BE677BFE5B", "description": "Detects Mirai Bots", "date_created": "13 May 2019", "yara_version": "3.7"}', '2021-01-07 19:41:12.493806', '');
 INSERT INTO public.rule OVERRIDING SYSTEM VALUE VALUES (2, 'IRIS_Mirai_X86', NULL, '{"usage": "Hunting and Identification", "author": "IBM X-Force IRIS", "ticket": "IRIS-8552", "md5_hash": "57f90080f26c033b3bb39279fbe466efd8f62287f1d3f6ec2165e093d00d820b", "description": "Detects X86 Mirai Bots", "date_created": "Oct 26 2020", "yara_version": "3.7"}', '2021-01-07 19:41:12.498341', '');

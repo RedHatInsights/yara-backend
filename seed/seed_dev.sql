@@ -1,5 +1,6 @@
 --PGPASSWORD=postgres pg_dump -U postgres -h localhost -p 5434 -d yara -t rule --inserts > dev.sql
 truncate rule CASCADE;
+truncate host CASCADE;
 INSERT INTO public.rule OVERRIDING SYSTEM VALUE VALUES (1, 'jjEncode', NULL, '{"ref": "http://blog.xanda.org/2015/06/10/yara-rule-for-jjencode/", "date": "10-June-2015", "hide": false, "author": "adnan.shukor@gmail.com", "impact": 3, "version": "1", "description": "jjencode detection"}', '2020-12-04 20:50:14.36871', '/*
     This Yara ruleset is under the GNU-GPLv2 license (http://www.gnu.org/licenses/gpl-2.0.html) and open to any user or organization, as    long as you use it under this license.
 
