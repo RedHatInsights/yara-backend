@@ -1,5 +1,5 @@
 --! Previous: -
---! Hash: sha1:30882eed93394dc6e38510220089c7f1a0af7c1c
+--! Hash: sha1:8b0180b0870f3fd3547311a828f13ab931ca05d9
 
 DROP FUNCTION IF EXISTS rule_host_count(rule);
 DROP FUNCTION IF EXISTS rule_affected_hosts(rule, text);
@@ -259,7 +259,8 @@ $$ LANGUAGE sql STABLE;
   not currently allow regular types to be sorted. */
 CREATE TABLE host_with_match
 (
-    matches string_match[]
+    match_count bigint,
+    matches     string_match[]
 ) INHERITS (host);
 COMMENT ON TABLE host_with_match IS E'@omit all';
 
@@ -271,6 +272,7 @@ SELECT host.id,
        host.hostname,
        host.tags,
        host.inventory_id,
+       COUNT(DISTINCT sm.id),
        ARRAY_AGG((sm.id, sm.rule_scan_id, sm.source, sm.string_offset, sm.string_identifier,
                   sm.string_data)::string_match)
 FROM host

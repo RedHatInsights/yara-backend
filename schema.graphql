@@ -745,9 +745,17 @@ type HostWithMatch {
   hostname: String
   tags: JSON
   inventoryId: UUID
+  matchCount: BigInt
   matches: [StringMatch]
   lastScanDate: Datetime
 }
+
+"""
+A signed eight-byte integer. The upper big integer values are greater than the
+max value for a JavaScript number. Therefore all big integers will be output as
+strings and not numbers.
+"""
+scalar BigInt
 
 type StringMatch implements Node {
   """
@@ -767,13 +775,6 @@ type StringMatch implements Node {
   ruleId: Int
   scanDate: Datetime
 }
-
-"""
-A signed eight-byte integer. The upper big integer values are greater than the
-max value for a JavaScript number. Therefore all big integers will be output as
-strings and not numbers.
-"""
-scalar BigInt
 
 """A `HostWithMatch` edge in the connection."""
 type HostWithMatchesEdge {
@@ -812,6 +813,8 @@ enum HostWithMatchesOrderBy {
   TAGS_DESC
   INVENTORY_ID_ASC
   INVENTORY_ID_DESC
+  MATCH_COUNT_ASC
+  MATCH_COUNT_DESC
   MATCHES_ASC
   MATCHES_DESC
   LAST_SCAN_DATE_ASC
@@ -837,6 +840,9 @@ input HostWithMatchCondition {
 
   """Checks for equality with the object’s `inventoryId` field."""
   inventoryId: UUID
+
+  """Checks for equality with the object’s `matchCount` field."""
+  matchCount: BigInt
 
   """Checks for equality with the object’s `matches` field."""
   matches: [StringMatchInput]
@@ -1234,6 +1240,7 @@ input HostWithMatchInput {
   hostname: String
   tags: JSON
   inventoryId: UUID
+  matchCount: BigInt
   matches: [StringMatchInput]
 }
 
